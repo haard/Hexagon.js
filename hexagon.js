@@ -12,24 +12,22 @@ function HexagonGrid(canvasId, radius) {
 
     this.canvasOriginX = 0;
     this.canvasOriginY = 0;
-    
+
     this.canvas.addEventListener("mousedown", this.clickEvent.bind(this), false);
 };
 
 HexagonGrid.prototype.drawHexGrid = function (rows, cols, originX, originY, isDebug) {
     this.canvasOriginX = originX;
     this.canvasOriginY = originY;
-    
+
     var currentHexX;
     var currentHexY;
     var debugText = "";
 
-    var offsetColumn = false;
-
     for (var col = 0; col < cols; col++) {
         for (var row = 0; row < rows; row++) {
 
-            if (!offsetColumn) {
+            if (col % 2 == 0) { // Offset every other row
                 currentHexX = (col * this.side) + originX;
                 currentHexY = (row * this.height) + originY;
             } else {
@@ -43,15 +41,25 @@ HexagonGrid.prototype.drawHexGrid = function (rows, cols, originX, originY, isDe
 
             this.drawHex(currentHexX, currentHexY, "#ddd", debugText);
         }
-        offsetColumn = !offsetColumn;
     }
 };
+HexagonGrid.prototype.getHexOrigin  = function(column, row, fillColor) {
+    var y = column % 2 == 0 ? (row * this.height) + this.canvasOriginY : (row * this.height) + this.canvasOriginY + (this.height / 2);
+    var x = (column * this.side) + this.canvasOriginX;
+    return {x: x, y: y};
+
+};
+
+HexagonGrid.prototype.getHexBoundingBox = function(tile) {
+    var origin = this.getHexOrigin(tile.column, tile.row);
+    return {x0: origin.x, y0: origin.y,
+            x1: origin.x + this.width, y1: origin.y + this.height};
+};
+
 
 HexagonGrid.prototype.drawHexAtColRow = function(column, row, color) {
-    var drawy = column % 2 == 0 ? (row * this.height) + this.canvasOriginY : (row * this.height) + this.canvasOriginY + (this.height / 2);
-    var drawx = (column * this.side) + this.canvasOriginX;
-
-    this.drawHex(drawx, drawy, color, "");
+    var origin = this.getHexOrigin(column, row);
+    this.drawHex(origin.x, origin.y, color, "");
 };
 
 HexagonGrid.prototype.drawHex = function(x0, y0, fillColor, debugText) {
@@ -81,14 +89,14 @@ HexagonGrid.prototype.drawHex = function(x0, y0, fillColor, debugText) {
 
 //Recusivly step up to the body to calculate canvas offset.
 HexagonGrid.prototype.getRelativeCanvasOffset = function() {
-	var x = 0, y = 0;
-	var layoutElement = this.canvas;
+    var x = 0, y = 0;
+    var layoutElement = this.canvas;
     if (layoutElement.offsetParent) {
         do {
             x += layoutElement.offsetLeft;
             y += layoutElement.offsetTop;
         } while (layoutElement = layoutElement.offsetParent);
-        
+
         return { x: x, y: y };
     }
 }
@@ -97,7 +105,7 @@ HexagonGrid.prototype.getRelativeCanvasOffset = function() {
 //Left edge of grid has a test to acuratly determin correct hex
 HexagonGrid.prototype.getSelectedTile = function(mouseX, mouseY) {
 
-	var offSet = this.getRelativeCanvasOffset();
+    var offSet = this.getRelativeCanvasOffset();
 
     mouseX -= offSet.x;
     mouseY -= offSet.y;
@@ -109,11 +117,11 @@ HexagonGrid.prototype.getSelectedTile = function(mouseX, mouseY) {
             : Math.floor(((mouseY + (this.height * 0.5)) / this.height)) - 1);
 
 
-    //Test if on left side of frame            
+    //Test if on left side of frame
     if (mouseX > (column * this.side) && mouseX < (column * this.side) + this.width - this.side) {
 
 
-        //Now test which of the two triangles we are in 
+        //Now test which of the two triangles we are in
         //Top left triangle points
         var p1 = new Object();
         p1.x = column * this.side;
@@ -190,9 +198,6 @@ HexagonGrid.prototype.clickEvent = function (e) {
 
     var tile = this.getSelectedTile(localX, localY);
     if (tile.column >= 0 && tile.row >= 0) {
-        var drawy = tile.column % 2 == 0 ? (tile.row * this.height) + this.canvasOriginY + 6 : (tile.row * this.height) + this.canvasOriginY + 6 + (this.height / 2);
-        var drawx = (tile.column * this.side) + this.canvasOriginX;
-
-        this.drawHex(drawx, drawy - 6, "rgba(110,110,70,0.3)", "");
-    } 
+        this.drawHexAtColRow(tile.column, tile.row, "rgba(110,110,70,0.3)", "");
+    }
 };
