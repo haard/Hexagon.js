@@ -16,6 +16,15 @@ function HexagonGrid(canvasId, radius) {
     this.canvas.addEventListener("mousedown", this.clickEvent.bind(this), false);
 };
 
+HexagonGrid.prototype.offsetToAxis = function(col, row) {
+    return{col: col, row: row-Math.floor(col/2)};
+}
+
+HexagonGrid.prototype.axisToOffset = function(col, row) {
+    var offset = col % 2 == 0 ? 1 : 0;
+    return{col: col, row: row+Math.floor(col/2) + offset};
+}
+
 HexagonGrid.prototype.drawHexGrid = function (rows, cols, originX, originY, isDebug) {
     this.canvasOriginX = originX;
     this.canvasOriginY = originY;
@@ -35,14 +44,17 @@ HexagonGrid.prototype.drawHexGrid = function (rows, cols, originX, originY, isDe
                 currentHexY = (row * this.height) + originY + (this.height * 0.5);
             }
 
+            var axis = this.offsetToAxis(col, row);
             if (isDebug) {
-                debugText = col + "," + row;
+                debugText = col + "," + row +'|' + axis.col + ',' + axis.row;
             }
+
 
             this.drawHex(currentHexX, currentHexY, "#ddd", debugText);
         }
     }
 };
+
 HexagonGrid.prototype.getHexOrigin  = function(column, row, fillColor) {
     var y = column % 2 == 0 ? (row * this.height) + this.canvasOriginY : (row * this.height) + this.canvasOriginY + (this.height / 2);
     var x = (column * this.side) + this.canvasOriginX;
@@ -198,6 +210,7 @@ HexagonGrid.prototype.clickEvent = function (e) {
 
     var tile = this.getSelectedTile(localX, localY);
     if (tile.column >= 0 && tile.row >= 0) {
+
         this.drawHexAtColRow(tile.column, tile.row, "rgba(110,110,70,0.3)", "");
     }
 };
